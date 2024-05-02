@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en"> 
+ <head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <title>Payment Details</title> 
+  <link rel="stylesheet" href="styles.css"> 
+ <style type="text/css" id="dcoder_stylesheet">body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.payment-methods {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.method {
+  background-color: #f0f0f0;
+  padding: 20px;
+  margin: 10px;
+  border-radius: 5px;
+  flex-basis: calc(50% - 20px);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.method h2 {
+  margin-top: 0;
+}
+
+.details {
+  display: none;
+}
+
+.copy-btn {
+  margin-bottom: 10px;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+}
+
+.popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  width: 89%;
+}
+
+.popup-content {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.close-btn {
+  background-color: #ff0000;
+  padding: 10px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.overlay.show {
+  opacity: 1;
+}
+
+.popup.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.overlay {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.popup {
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}</style></head> 
+ <body> 
+  <div class="payment-methods"> 
+   <div class="method" id="bank"> 
+    <h2>Bank Details</h2> <button class="copy-btn">Copy Details</button> 
+    <div class="details"> 
+     <p>Bank Name: XYZ Bank</p> 
+     <p>Account Number: 1234567890</p> 
+     <p>IFSC Code: ABCD1234567</p> 
+    </div> 
+   </div> 
+   <div class="method" id="paypal"> 
+    <h2>PayPal</h2> <button class="copy-btn">Copy Details</button> 
+    <div class="details"> 
+     <p>PayPal Email: example@paypal.com</p> 
+    </div> 
+   </div> <!-- Add more payment methods here --> 
+  </div> 
+  <div class="overlay"></div> 
+  <div class="popup"> 
+   <div class="popup-content"></div> 
+   <div class="close-btn">
+     Close 
+   </div> 
+  </div> 
+  <script src="script.js"></script> 
+ 
+<script type="text/javascript" id="dcoder_script">document.addEventListener('DOMContentLoaded', function() {
+  const copyBtns = document.querySelectorAll('.copy-btn');
+  const overlay = document.querySelector('.overlay');
+  const popup = document.querySelector('.popup');
+  const popupContent = document.querySelector('.popup-content');
+  const closeBtn = document.querySelector('.close-btn');
+  let isPopupOpen = false;
+  let startY;
+
+  copyBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const details = this.parentElement.querySelector('.details').innerHTML;
+      popupContent.innerHTML = details;
+      openPopup();
+    });
+  });
+
+  overlay.addEventListener('click', function(event) {
+    if (event.target === overlay) {
+      closePopup();
+    }
+  });
+
+  closeBtn.addEventListener('click', function() {
+    closePopup();
+  });
+
+  window.addEventListener('resize', function() {
+    positionPopup();
+  });
+
+  document.addEventListener('touchstart', function(event) {
+    startY = event.touches[0].clientY;
+  });
+
+  document.addEventListener('touchmove', function(event) {
+    if (!isPopupOpen) {
+      return;
+    }
+
+    const deltaY = event.touches[0].clientY - startY;
+    if (deltaY > 50) {
+      closePopup();
+    }
+  });
+
+  function openPopup() {
+    overlay.style.display = 'block';
+    popup.style.display = 'block';
+    setTimeout(function() {
+      overlay.classList.add('show');
+      popup.classList.add('show');
+    }, 10); // Delay to allow CSS transitions to take effect
+    isPopupOpen = true;
+    disableBackgroundScroll();
+  }
+
+  function closePopup() {
+    overlay.classList.remove('show');
+    popup.classList.remove('show');
+    setTimeout(function() {
+      overlay.style.display = 'none';
+      popup.style.display = 'none';
+    }, 300); // Duration of CSS transition
+    isPopupOpen = false;
+    enableBackgroundScroll();
+  }
+
+  function positionPopup() {
+    if (window.innerWidth < 768) {
+      popup.style.top = 'auto';
+      popup.style.bottom = '0';
+      popup.style.transform = 'translate(-50%, 0)';
+    } else {
+      popup.style.top = '50%';
+      popup.style.bottom = 'auto';
+      popup.style.transform = 'translate(-50%, -50%)';
+    }
+  }
+
+  function disableBackgroundScroll() {
+    document.body.style.overflow = 'hidden';
+  }
+
+  function enableBackgroundScroll() {
+    document.body.style.overflow = '';
+  }
+
+  positionPopup();
+
+  // URL parameter handling
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const popupParam = urlParams.get('popup');
+  
+  if (popupParam !== null) {
+    const matchingPopup = document.querySelector(`[view="${popupParam}"]`);
+    if (matchingPopup) {
+      openPopup();
+    }
+  }
+});</script></body></html>

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let startY;
     let startTop;
     let pressTimer;
+    let isLongPress = false; // Flag to indicate long press
     const longPressDuration = 1000; // 1 second
 
     function copyToClipboard(text) {
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleLongPress(event) {
+        isLongPress = true; // Set long press flag
         const popupId = event.target.closest('.view-btn').getAttribute("data-popup");
         if (popupId) {
             const linkToCopy = `${window.location.origin}/?view=${popupId}`;
@@ -43,6 +45,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     buttons.forEach(button => {
         button.addEventListener('click', function () {
+            if (isLongPress) {
+                isLongPress = false; // Reset long press flag
+                return; // Prevent normal click action after long press
+            }
             const popupId = this.getAttribute('data-popup');
             const popup = document.getElementById(popupId);
             if (popup) {
@@ -61,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         button.addEventListener('mousedown', function (event) {
+            isLongPress = false; // Reset long press flag
             pressTimer = setTimeout(handleLongPress, longPressDuration, event);
         });
 
@@ -73,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         button.addEventListener('touchstart', function (event) {
+            isLongPress = false; // Reset long press flag
             pressTimer = setTimeout(handleLongPress, longPressDuration, event);
         });
 

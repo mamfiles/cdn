@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let startY;
             let startTop;
             let pressTimer;
-            const longPressDuration = 800; // 1 second
+            const longPressDuration = 900; // 1 second
 
             function copyToClipboard(text) {
                 const textarea = document.createElement("textarea");

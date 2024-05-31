@@ -7,7 +7,26 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPopup;
     let startY;
     let startTop;
-    let isLongPressActive = false; // Flag to track long-press
+    let pressTimer;
+    const longPressDuration = 1000; // 1 second
+
+    function copyToClipboard(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        alert("Link copied to clipboard!");
+    }
+
+    function handleLongPress(event) {
+        const popupId = event.target.closest('.view-btn').getAttribute("data-popup");
+        if (popupId) {
+            const linkToCopy = `${window.location.origin}/?view=${popupId}`;
+            copyToClipboard(linkToCopy);
+        }
+    }
 
     function checkUrlParams() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -23,14 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
     checkUrlParams();
 
     buttons.forEach(button => {
-        let pressTimer;
-        const longPressDuration = 1000; // 1 second
-
-        button.addEventListener('click', function (e) {
-            if (isLongPressActive) {
-                isLongPressActive = false; // Reset the long-press flag
-                return;
-            }
+        button.addEventListener('click', function () {
             const popupId = this.getAttribute('data-popup');
             const popup = document.getElementById(popupId);
             if (popup) {
@@ -48,24 +60,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        function copyToClipboard(text) {
-            const textarea = document.createElement("textarea");
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand("copy");
-            document.body.removeChild(textarea);
-            alert("Link copied to clipboard!");
-        }
-
-        function handleLongPress(event) {
-            isLongPressActive = true; // Set the long-press flag
-            const linkToCopy = `${window.location.origin}/#${this.getAttribute("data-popup")}`;
-            copyToClipboard(linkToCopy);
-        }
-
         button.addEventListener('mousedown', function (event) {
-            pressTimer = setTimeout(handleLongPress.bind(this), longPressDuration, event);
+            pressTimer = setTimeout(handleLongPress, longPressDuration, event);
         });
 
         button.addEventListener('mouseup', function () {
@@ -77,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         button.addEventListener('touchstart', function (event) {
-            pressTimer = setTimeout(handleLongPress.bind(this), longPressDuration, event);
+            pressTimer = setTimeout(handleLongPress, longPressDuration, event);
         });
 
         button.addEventListener('touchend', function () {
@@ -92,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
     closeBtns.forEach(btn => {
         btn.addEventListener('click', function () {
             closePopup();
-            removeUrlParam(); // Call function to remove URL parameter
+            removeUrlParam();
         });
     });
 
@@ -100,9 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
         event.stopPropagation();
     });
 
-    window.addEventListener('resize', function () {
-        positionPopup();
-    });
+    window.addEventListener('resize', positionPopup);
 
     window.addEventListener('click', function (event) {
         if (isPopupOpen && event.target === overlay) {
@@ -112,57 +106,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function handleTouchEvents(event) {
         if (!isPopupOpen) return;
-
-        if (event.touches.length === 1) { // Check if only one finger is touched
+        if (event.touches.length === 1) {
             startY = event.touches[0].clientY;
             startTop = parseInt(currentPopup.style.top) || currentPopup.getBoundingClientRect().top;
         }
     }
 
-    document.addEventListener('touchstart', handleTouchEvents);
-    overlay.addEventListener('touchstart', handleTouchEvents);
-
     function handleTouchMove(event) {
-        if (!isPopupOpen || event.touches.length !== 1) return; // Only proceed if one finger is touched
-
+        if (!isPopupOpen || event.touches.length !== 1) return;
         const deltaY = event.touches[0].clientY - startY;
         const newTop = Math.max(startTop + deltaY, startTop);
-
         currentPopup.style.top = newTop + 'px';
     }
 
-    document.addEventListener('touchmove', handleTouchMove);
-    overlay.addEventListener('touchmove', handleTouchMove);
-
     function handleTouchEnd(event) {
-        if (!isPopupOpen) {
-            return;
-        }
-
+        if (!isPopupOpen) return;
         const deltaY = event.changedTouches[0].clientY - startY;
         const popupHeight = currentPopup.offsetHeight;
-        const swipePercentage = 0.5; // Set the swipe percentage based on the popup height
-        const transitionDuration = 300; // Duration of the transition in milliseconds
+        const swipePercentage = 0.5;
+        const transitionDuration = 300;
 
         if (deltaY > popupHeight * swipePercentage) {
             closePopup();
-            removeUrlParam(); // Call function to remove URL parameter
+            removeUrlParam();
         } else {
             currentPopup.style.top = startTop + 'px';
-            if (deltaY < 0 && Math.abs(deltaY) > popupHeight * swipePercentage * 0.5) {
+            currentPopup.style.transition = 'top 0.3s ease';
+            setTimeout(() => {
                 currentPopup.style.transition = '';
-                currentPopup.style.top = startTop + 'px';
-            } else {
-                currentPopup.style.transition = 'top 0.3s ease'; // Add transition
-                setTimeout(function () {
-                    currentPopup.style.transition = ''; // Remove transition after a certain duration
-                }, transitionDuration);
-            }
+            }, transitionDuration);
         }
     }
 
+    document.addEventListener('touchstart', handleTouchEvents);
+    document.addEventListener('touchmove', handleTouchMove);
     document.addEventListener('touchend', handleTouchEnd);
-    overlay.addEventListener('touchend', handleTouchEnd);
 
     function openPopup(popup) {
         if (window.innerWidth < 768) {
@@ -216,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 popups.forEach(popup => {
                     popup.classList.remove('fade-out-animation');
                 });
-            }, 300); // Duration of CSS transition
+            }, 300);
         }
         isPopupOpen = false;
         enableBackgroundScroll();

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let currentPopup;
             let startY;
             let startTop;
+            let longPressTimeout;
 
             function checkUrlParams() {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -47,7 +48,36 @@ document.addEventListener('DOMContentLoaded', function () {
                     const popupId = this.getAttribute('data-popup');
                     const url = `${window.location.origin}${window.location.pathname}?view=${popupId}`;
                     copyToClipboard(url);
-                    alert('Popup URL copied to clipboard: ' + url);
+                    alert('Link copied to clipboard:\n\n' + url);
+                });
+
+                // Adding long press functionality for both touch and mouse
+                function handleLongPress(event) {
+                    event.preventDefault();
+                    const popupId = button.getAttribute('data-popup');
+                    const url = `${window.location.origin}${window.location.pathname}?view=${popupId}`;
+                    copyToClipboard(url);
+                    alert('Link copied to clipboard:\n\n' + url);
+                }
+
+                button.addEventListener('touchstart', function (event) {
+                    longPressTimeout = setTimeout(() => handleLongPress(event), 600);
+                });
+
+                button.addEventListener('touchend', function () {
+                    clearTimeout(longPressTimeout);
+                });
+
+                button.addEventListener('mousedown', function (event) {
+                    longPressTimeout = setTimeout(() => handleLongPress(event), 600);
+                });
+
+                button.addEventListener('mouseup', function () {
+                    clearTimeout(longPressTimeout);
+                });
+
+                button.addEventListener('mouseleave', function () {
+                    clearTimeout(longPressTimeout);
                 });
             });
 
@@ -223,9 +253,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             function copyToClipboard(text) {
                 navigator.clipboard.writeText(text).then(function () {
-                    console.log('Text copied to clipboard');
+                    console.log('Link copied to clipboard!');
                 }).catch(function (err) {
-                    console.error('Could not copy text: ', err);
+                    console.error('Could not copy link: ', err);
                 });
             }
 

@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const popupId = this.getAttribute('data-popup');
                     const url = `${window.location.origin}${window.location.pathname}?view=${popupId}`;
                     copyToClipboard(url);
-                    alert('Link copied to clipboard:\n\n' + url);
+                    alert('Link copied to clipboard: ' + popupId);
                 });
 
                 // Adding long press functionality for both touch and mouse
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const popupId = button.getAttribute('data-popup');
                     const url = `${window.location.origin}${window.location.pathname}?view=${popupId}`;
                     copyToClipboard(url);
-                    alert('Link copied to clipboard:\n\n' + url);
+                    alert('Link copied to clipboard: ' + popupId);
                 }
 
                 button.addEventListener('touchstart', function (event) {

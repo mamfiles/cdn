@@ -1,1 +1,233 @@
-document.addEventListener("DOMContentLoaded",(function(){const t=document.querySelectorAll(".view-btn"),e=document.querySelector(".overlay"),n=document.querySelectorAll(".popup"),o=document.querySelectorAll(".close-btn");let s,i,a,d=!1;function c(t){d&&1===t.touches.length&&(i=t.touches[0].clientY,a=parseInt(s.style.top)||s.getBoundingClientRect().top)}function l(t){if(!d||1!==t.touches.length)return;const e=t.touches[0].clientY-i,n=Math.max(a+e,a);s.style.top=n+"px"}function r(t){if(!d)return;const e=t.changedTouches[0].clientY-i,n=window.innerHeight;e>.2*n?(m(),f()):(s.style.top=a+"px",e<0&&Math.abs(e)>.2*n*.5?(s.style.transition="",s.style.top=a+"px"):(s.style.transition="top 0.3s ease",setTimeout((function(){s.style.transition=""}),300)))}function u(t){window.innerWidth<768?(t.style.top="auto",t.style.bottom="0",t.style.transform="translate(-50%, 0)",t.classList.add("slide-in-animation"),e.classList.add("fade-in-animation")):(e.style.display="block",e.classList.add("fade-in-animation"),n.forEach((t=>{t.style.top="50%",t.style.bottom="auto",t.style.transform="translate(-50%, -50%)",t.classList.add("fade-in-animation")}))),e.style.display="block",t.style.display="block",e.classList.add("show"),t.classList.add("show"),d=!0,document.body.style.overflow="hidden",s=t}function m(){window.innerWidth<768?(s.style.top=s.getBoundingClientRect().top+"px",s.classList.add("slide-out-animation"),e.classList.add("fade-out-animation"),setTimeout((function(){e.style.display="none",s.style.display="none",s.classList.remove("slide-out-animation"),e.classList.remove("fade-out-animation")}),300)):(e.classList.add("fade-out-animation"),n.forEach((t=>{t.classList.add("fade-out-animation")})),setTimeout((function(){e.style.display="none",n.forEach((t=>{t.style.display="none"})),e.classList.remove("fade-out-animation"),n.forEach((t=>{t.classList.remove("fade-out-animation")}))}),300)),d=!1,document.body.style.overflow=""}function y(){window.innerWidth<768?n.forEach((t=>{t.style.top="auto",t.style.bottom="0",t.style.transform="translate(-50%, 0)"})):n.forEach((t=>{t.style.top="50%",t.style.bottom="auto",t.style.transform="translate(-50%, -50%)"}))}function f(){const t=window.location.pathname;history.replaceState({},document.title,t)}!function(){const t=new URLSearchParams(window.location.search).get("view");if(t){const e=document.getElementById(t);e&&u(e)}}(),t.forEach((t=>{t.addEventListener("click",(function(){const t=this.getAttribute("data-popup"),e=document.getElementById(t);e&&u(e)})),t.addEventListener("keydown",(function(t){if("Enter"===t.code||"Space"===t.code){const t=this.getAttribute("data-popup"),e=document.getElementById(t);e&&u(e)}}))})),o.forEach((t=>{t.addEventListener("click",(function(){m(),f()}))})),e.addEventListener("click",(function(t){t.stopPropagation()})),window.addEventListener("resize",(function(){y()})),window.addEventListener("click",(function(t){d&&t.target===e&&m()})),document.addEventListener("touchstart",c),e.addEventListener("touchstart",c),document.addEventListener("touchmove",l),e.addEventListener("touchmove",l),document.addEventListener("touchend",r),e.addEventListener("touchend",r),y()}));
+document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.view-btn');
+            const overlay = document.querySelector('.overlay');
+            const popups = document.querySelectorAll('.popup');
+            const closeBtns = document.querySelectorAll('.close-btn');
+            let isPopupOpen = false;
+            let currentPopup;
+            let startY;
+            let startTop;
+
+            function checkUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const popupId = urlParams.get('view');
+                if (popupId) {
+                    const popup = document.getElementById(popupId);
+                    if (popup) {
+                        openPopup(popup);
+                    }
+                }
+            }
+
+            checkUrlParams();
+
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const popupId = this.getAttribute('data-popup');
+                    const popup = document.getElementById(popupId);
+                    if (popup) {
+                        openPopup(popup);
+                    }
+                });
+
+                // Adding keyboard event listener for accessibility
+                button.addEventListener('keydown', function (event) {
+                    if (event.code === 'Enter' || event.code === 'Space') {
+                        const popupId = this.getAttribute('data-popup');
+                        const popup = document.getElementById(popupId);
+                        if (popup) {
+                            openPopup(popup);
+                        }
+                    }
+                });
+
+                // Adding long press event listener to copy URL to clipboard
+                button.addEventListener('contextmenu', function (event) {
+                    event.preventDefault(); // Prevent the default context menu
+                    const popupId = this.getAttribute('data-popup');
+                    const url = `${window.location.origin}${window.location.pathname}?view=${popupId}`;
+                    copyToClipboard(url);
+                    alert('Popup URL copied to clipboard: ' + url);
+                });
+            });
+
+            closeBtns.forEach(btn => {
+                btn.addEventListener('click', function () {
+                    closePopup();
+                    removeUrlParam(); // Call function to remove URL parameter
+                });
+            });
+
+            overlay.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+
+            window.addEventListener('resize', function () {
+                positionPopup();
+            });
+
+            window.addEventListener('click', function (event) {
+                if (isPopupOpen && event.target === overlay) {
+                    closePopup();
+                }
+            });
+
+            // Function to handle touch events for both popup and overlay
+            function handleTouchEvents(event) {
+                if (!isPopupOpen) return;
+
+                if (event.touches.length === 1) { // Check if only one finger is touched
+                    startY = event.touches[0].clientY;
+                    startTop = parseInt(currentPopup.style.top) || currentPopup.getBoundingClientRect().top;
+                }
+            }
+
+            // Add touch event listeners for both popup and overlay
+            document.addEventListener('touchstart', handleTouchEvents);
+            overlay.addEventListener('touchstart', handleTouchEvents);
+
+            // Function to handle touch move events for both popup and overlay
+            function handleTouchMove(event) {
+                if (!isPopupOpen || event.touches.length !== 1) return; // Only proceed if one finger is touched
+
+                const deltaY = event.touches[0].clientY - startY;
+                const newTop = Math.max(startTop + deltaY, startTop);
+
+                currentPopup.style.top = newTop + 'px';
+            }
+
+            // Add touch move event listeners for both popup and overlay
+            document.addEventListener('touchmove', handleTouchMove);
+            overlay.addEventListener('touchmove', handleTouchMove);
+
+            // Function to handle touch end events for both popup and overlay
+            function handleTouchEnd(event) {
+                if (!isPopupOpen) {
+                    return;
+                }
+
+                const deltaY = event.changedTouches[0].clientY - startY;
+                const popupHeight = currentPopup.offsetHeight;
+                const swipePercentage = 0.5; // Set the swipe percentage based on the popup height
+                const transitionDuration = 300; // Duration of the transition in milliseconds
+
+                if (deltaY > popupHeight * swipePercentage) {
+                    closePopup();
+                    removeUrlParam(); // Call function to remove URL parameter
+                } else {
+                    currentPopup.style.top = startTop + 'px';
+                    if (deltaY < 0 && Math.abs(deltaY) > popupHeight * swipePercentage * 0.5) {
+                        // If the popup or overlay bounces back up and surpasses half the swipe threshold, reset position without transition
+                        currentPopup.style.transition = '';
+                        currentPopup.style.top = startTop + 'px';
+                    } else {
+                        // Apply transition only if the popup or overlay is not bouncing back up
+                        currentPopup.style.transition = 'top 0.3s ease'; // Add transition
+                        setTimeout(function () {
+                            currentPopup.style.transition = ''; // Remove transition after a certain duration
+                        }, transitionDuration);
+                    }
+                }
+            }
+
+            // Add touch end event listeners for both popup and overlay
+            document.addEventListener('touchend', handleTouchEnd);
+            overlay.addEventListener('touchend', handleTouchEnd);
+
+            function openPopup(popup) {
+                if (window.innerWidth < 768) {
+                    popup.style.top = 'auto';
+                    popup.style.bottom = '0';
+                    popup.style.transform = 'translate(-50%, 0)';
+                    popup.classList.add('slide-in-animation');
+                    overlay.classList.add('fade-in-animation');
+                } else {
+                    overlay.style.display = 'block';
+                    overlay.classList.add('fade-in-animation');
+                    popups.forEach(popup => {
+                        popup.style.top = '50%';
+                        popup.style.bottom = 'auto';
+                        popup.style.transform = 'translate(-50%, -50%)';
+                        popup.classList.add('fade-in-animation');
+                    });
+                }
+
+                overlay.style.display = 'block';
+                popup.style.display = 'block';
+                overlay.classList.add('show');
+                popup.classList.add('show');
+                isPopupOpen = true;
+                disableBackgroundScroll();
+                currentPopup = popup;
+            }
+
+            function closePopup() {
+                if (window.innerWidth < 768) {
+                    currentPopup.style.top = currentPopup.getBoundingClientRect().top + 'px';
+                    currentPopup.classList.add('slide-out-animation');
+                    overlay.classList.add('fade-out-animation');
+                    setTimeout(function () {
+                        overlay.style.display = 'none';
+                        currentPopup.style.display = 'none';
+                        currentPopup.classList.remove('slide-out-animation');
+                        overlay.classList.remove('fade-out-animation');
+                    }, 300);
+                } else {
+                    overlay.classList.add('fade-out-animation');
+                    popups.forEach(popup => {
+                        popup.classList.add('fade-out-animation');
+                    });
+                    setTimeout(function () {
+                        overlay.style.display = 'none';
+                        popups.forEach(popup => {
+                            popup.style.display = 'none';
+                        });
+                        overlay.classList.remove('fade-out-animation');
+                        popups.forEach(popup => {
+                            popup.classList.remove('fade-out-animation');
+                        });
+                    }, 300); // Duration of CSS transition
+                }
+                isPopupOpen = false;
+                enableBackgroundScroll();
+            }
+
+            function positionPopup() {
+                if (window.innerWidth < 768) {
+                    popups.forEach(popup => {
+                        popup.style.top = 'auto';
+                        popup.style.bottom = '0';
+                        popup.style.transform = 'translate(-50%, 0)';
+                    });
+                } else {
+                    popups.forEach(popup => {
+                        popup.style.top = '50%';
+                        popup.style.bottom = 'auto';
+                        popup.style.transform = 'translate(-50%, -50%)';
+                    });
+                }
+            }
+
+            function disableBackgroundScroll() {
+                document.body.style.overflow = 'hidden';
+            }
+
+            function enableBackgroundScroll() {
+                document.body.style.overflow = '';
+            }
+
+            function removeUrlParam() {
+                const urlWithoutParams = window.location.pathname;
+                history.replaceState({}, document.title, urlWithoutParams);
+            }
+
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text).then(function () {
+                    console.log('Text copied to clipboard');
+                }).catch(function (err) {
+                    console.error('Could not copy text: ', err);
+                });
+            }
+
+            positionPopup();
+        });
